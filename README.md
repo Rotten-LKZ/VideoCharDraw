@@ -1,5 +1,7 @@
 # VideoCharDraw
 
+## 中文
+
 #### 介绍
 
 视频字符画
@@ -26,3 +28,33 @@
 2.  新建 Feat_xxx 分支
 3.  提交代码
 4.  新建 Pull Request
+
+## English
+
+#### Description
+
+Video Char Draw
+
+#### Documentation
+
+- CharDraw.py First version
+- CharDraw_compress.py A version with compress
+- CharDraw_thread.py A version with compress and thread
+
+#### Installation
+
+1.  Download ZIP or clone(Probably not upgrade)
+2.  Download libraries pillow and opencv-python
+
+#### Instructions
+
+1.  Modify the variables as indicated above
+2.  Run code
+
+#### Contribution
+
+1.  Fork the repository
+2.  Create Feat_xxx branch
+3.  Commit your code
+4.  Create Pull Request
+

@@ -5,8 +5,9 @@ from PIL import Image, ImageDraw, ImageFont
 import threading
 
 video_path = "videott.mp4"  # 视频路径
-out_path = "out/"  # 输出目录
-huaZhi = 2  # 清晰度，最低1，无上限
+out_path = "VideoTestOut/"  # 输出目录
+huaZhi = 1  # 清晰度，最低1，无上限
+thread_num = 3  # 线程数，建议CPU线程数-1
 
 # -----以下为程序使用变量-----#
 video_info = []
@@ -88,7 +89,7 @@ def mergeImage():
     # global num
     videoWriter = cv2.VideoWriter(out_path + 'out.mp4', cv2.VideoWriter_fourcc('m', 'p', '4', 'v'), video_info[0],
                                   info[1])
-    for i in range(1, num + 1):
+    for i in range(1, num):
         filename = out_path + str(i) + 'g.jpg'
         if os.path.exists(filename):
             img = cv2.imread(filename=filename)
@@ -100,52 +101,72 @@ def mergeImage():
 def deleteImg():
     print("开始删除转换图片")
     global num
-    for i in range(1, num + 1):
+    for i in range(1, num):
         os.remove(out_path + str(i) + 'g.jpg')
     print("删除转换图片完毕")
 
 
 class NewTransform(threading.Thread):
-    def __init__(self, thread_id: int, name: str, is_first: bool):
+    def __init__(self, thread_id: int, name: str, first: int, thread_number: int, serial: int):
+        '''
+
+        :param thread_id: 线程ID
+        :param name: 线程名字
+        :param first: 是不是第一个（0为是，1为不是，2为最后一个）
+        :param thread_number: 总线程数
+        :param serial: 第几线程
+        '''
         threading.Thread.__init__(self)
         self.thread_id = thread_id
         self.name = name
-        self.first = is_first
+        self.first = first
+        self.thread_number = thread_number
+        self.serial = serial
 
     def run(self):
         print("开始线程：", self.thread_id)
-        # print(self.first)
-        # print(num)
-        if self.first:
-            for i in range(1, int((num + 1) / 2)):
-                # print(int(num / 2))
-                imageToChar(out_path + str(i) + '.jpg', i)
-        else:
-            for i in range(int((num + 1) / 2), num + 1):
-                # print(num - int(num / 2))
-                imageToChar(out_path + str(i) + '.jpg', i)
+        if self.first == 0:  # 判断是不是第一个线程
+            for j in range(1, int((num + 1) / self.thread_number * self.serial)):
+                imageToChar(out_path + str(j) + '.jpg', j)
+        elif self.first == 2:  # 判断是不是最后一个线程
+            for j in range(int((num + 1) / self.thread_number * (self.serial - 1)), num + 1):
+                imageToChar(out_path + str(j) + '.jpg', j)
+        else:  # 其他线程
+            for j in range(int((num + 1) / self.thread_number * (self.serial - 1)),
+                           int((num + 1) / self.thread_number * self.serial)):
+                imageToChar(out_path + str(j) + '.jpg', j)
 
         print("结束线程：", self.thread_id)
 
 
 if __name__ == "__main__":
-    # os.makedirs(out_path)
-    if not os.path.exists(out_path):
+    if not os.path.exists(out_path):  # 如果没有这个输出目录就创建
         os.makedirs(out_path)
-    video_info = getVideoInfo()
-    info.append((int(video_info[2] * huaZhi / 8), int(video_info[1] * huaZhi / 8)))
-    info.append((int(video_info[2] * huaZhi / 8) * 8, int(video_info[1] * huaZhi / 8) * 8))
-    print(info)
+
+    video_info = getVideoInfo()  # 获取视频信息
+    info.append((int(video_info[2] * huaZhi / 8), int(video_info[1] * huaZhi / 8)))  # 添加计算设置数值
+    info.append((int(video_info[2] * huaZhi / 8) * 8, int(video_info[1] * huaZhi / 8) * 8))  # 添加计算设置数值
+    # print(info)
 
     outVideoAllCapture()  # 截取视频所有帧
 
-    thread_1 = NewTransform(1, "Last", True)
-    thread_2 = NewTransform(2, "Next", False)
-    thread_1.start()
-    thread_2.start()
-    thread_1.join()
-    thread_2.join()
-    mergeImage()
+    thread = []
+
+    for i in range(1, thread_num + 1):  # 循环创建新进程
+        if i == 1:
+            thread.append(NewTransform(i, "Thread" + str(i), 0, thread_num, i))  # 第一个线程
+        elif i == thread_num:
+            thread.append(NewTransform(i, "Thread" + str(i), 2, thread_num, i))  # 最后一个线程
+        else:
+            thread.append(NewTransform(i, "Thread" + str(i), 1, thread_num, i))  # 其他线程
+
+    for i in range(thread.__len__()):  # 循环启动线程
+        thread[i].start()
+
+    for i in range(thread.__len__()):  # 循环堵塞线程
+        thread[i].join()
+
+    mergeImage()  # 合并图片成视频
     deleteImg()  # 删除每一帧的字符画
 
 video.release()

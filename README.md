@@ -1,3 +1,7 @@
+## Archived
+
+This project is no longer maintained
+
 # VideoCharDraw
 
 ## 中文
